@@ -6,6 +6,7 @@ import ModelSelector from "./ModelSelector";
 import ParameterControls, { type Params } from "./ParameterControls";
 import ImageUpload from "./ImageUpload";
 import ResultDisplay from "./ResultDisplay";
+import HistoryPanel from "./HistoryPanel";
 import type { OpenRouterModel, UIModel, GenerateResponse } from "@/types";
 
 function defaultParams(model: UIModel | null): Params {
@@ -28,6 +29,7 @@ export default function ImageGenerator() {
   const [images, setImages]         = useState<File[]>([]);
   const [loading, setLoading]       = useState(false);
   const [result, setResult]         = useState<GenerateResponse | null>(null);
+  const [historyKey, setHistoryKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -96,6 +98,7 @@ export default function ImageGenerator() {
 
       const data: GenerateResponse = await res.json();
       setResult(data);
+      if ((data.images?.length ?? 0) > 0) setHistoryKey((k) => k + 1);
     } catch (err) {
       setResult({ images: [], error: String(err) });
     } finally {
@@ -215,6 +218,7 @@ export default function ImageGenerator() {
         {/* Results */}
         <main className="flex-1 overflow-y-auto p-4">
           <ResultDisplay result={result} loading={loading} />
+          <HistoryPanel refreshKey={historyKey} />
         </main>
       </div>
     </div>

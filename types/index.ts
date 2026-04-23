@@ -53,6 +53,16 @@ export interface ImageResult {
   b64_json?: string;
   revisedPrompt?: string;
   caption?: string;  // text returned alongside the image (e.g. Gemini)
+  localUrl?: string; // served from /generated/<id>.png after saving to disk
+}
+
+export interface SavedImageMeta {
+  id: string;
+  filename: string;
+  src: string;       // public URL e.g. /generated/<id>.png
+  prompt: string;
+  model: string;
+  createdAt: string; // ISO string
 }
 
 export interface GenerateResponse {

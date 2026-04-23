@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractImages } from "@/lib/extractImages";
+import { saveImageToDisk } from "@/lib/saveImage";
 import { logInfo, logJson, logRaw } from "@/lib/logger";
 import type { GenerateResponse } from "@/types";
 
@@ -98,8 +99,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errMsg }, { status: orRes.status });
     }
 
-    const { images, debugChoices } = extractImages(orData.choices ?? []);
-    logInfo("edit", `extracted images: ${images.length}`);
+    const { images: rawImages, debugChoices } = extractImages(orData.choices ?? []);
+    logInfo("edit", `extracted images: ${rawImages.length}`);
+
+    const saved = await Promise.all(
+      rawImages.map(img => saveImageToDisk({ url: img.url, b64_json: img.b64_json, prompt, model }))
+    );
+    const images = rawImages.map((img, i) => ({ ...img, localUrl: saved[i]?.src }));
 
     const usage = orData.usage
       ? {

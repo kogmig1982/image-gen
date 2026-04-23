@@ -16,6 +16,9 @@ dist
 logs
 *.log
 
+# Generated images (runtime, not source)
+public/generated/
+
 # OS
 .DS_Store
 Thumbs.db

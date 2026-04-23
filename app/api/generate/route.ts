@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModelParams } from "@/lib/models";
 import { extractImages } from "@/lib/extractImages";
+import { saveImageToDisk } from "@/lib/saveImage";
 import { logInfo, logJson, logRaw } from "@/lib/logger";
 import type { GenerateResponse, ImageResult } from "@/types";
 
@@ -92,12 +93,17 @@ async function generateViaImagesEndpoint(opts: {
       return NextResponse.json({ error: errMsg }, { status: orRes.status });
     }
 
-    const images: ImageResult[] = (orData.data ?? []).map(
+    const rawImages: ImageResult[] = (orData.data ?? []).map(
       (item: { url?: string; b64_json?: string; revised_prompt?: string }) => ({
         url: item.url, b64_json: item.b64_json, revisedPrompt: item.revised_prompt,
       })
     );
-    logInfo("generate", `extracted images: ${images.length}`);
+    logInfo("generate", `extracted images: ${rawImages.length}`);
+
+    const saved = await Promise.all(
+      rawImages.map(img => saveImageToDisk({ url: img.url, b64_json: img.b64_json, prompt, model }))
+    );
+    const images = rawImages.map((img, i) => ({ ...img, localUrl: saved[i]?.src }));
 
     const response: GenerateResponse = {
       images,
@@ -159,8 +165,13 @@ async function generateViaChatCompletions(opts: {
       return NextResponse.json({ error: errMsg }, { status: orRes.status });
     }
 
-    const { images, debugChoices } = extractImages(orData.choices ?? []);
-    logInfo("generate", `extracted images: ${images.length}`);
+    const { images: rawImages, debugChoices } = extractImages(orData.choices ?? []);
+    logInfo("generate", `extracted images: ${rawImages.length}`);
+
+    const saved = await Promise.all(
+      rawImages.map(img => saveImageToDisk({ url: img.url, b64_json: img.b64_json, prompt, model }))
+    );
+    const images = rawImages.map((img, i) => ({ ...img, localUrl: saved[i]?.src }));
 
     const response: GenerateResponse = {
       images,
