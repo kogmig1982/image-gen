@@ -28,21 +28,26 @@ export function extractImages(choices: any[]): { images: ImageResult[]; debugCho
     if (!msg) continue;
 
     // ── A  –  message.images[]  (OpenRouter image-gen models) ───────────────
+    let foundInImages = false;
     if (Array.isArray(msg.images) && msg.images.length > 0) {
       for (const img of msg.images) {
         if (!img) continue;
         // shape: { url: "data:..." }
         if (typeof img.url === "string") {
           images.push({ url: img.url });
+          foundInImages = true;
         }
         // shape: { image_url: { url: "..." } }
         else if (typeof img.image_url?.url === "string") {
           images.push({ url: img.image_url.url });
+          foundInImages = true;
         }
       }
     }
 
     // ── B / C / D  –  content field ─────────────────────────────────────────
+    // Skip if images were already extracted from msg.images to avoid duplicates.
+    if (foundInImages) continue;
     const content = msg.content;
 
     if (typeof content === "string") {
